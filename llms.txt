@@ -1,8 +1,8 @@
-# Precision Metronome
-> High-precision, zero-drift web metronome supporting arbitrary float BPM and millisecond accuracy.
+# Precision Optical Metronome
+> High-precision web metronome supporting arbitrary float BPM, sub-millisecond accuracy, and optical visual flash.
 
 ## Core Capabilities
-- Sub-millisecond timing precision powered by Web Audio API hardware audio clock.
-- Supports arbitrary floating-point BPM inputs (e.g., 96.05 BPM) for video sync and tempo-locked pieces.
-- Optical screen flash synchronized to screen refresh rate with zero cumulative drift.
+- Sub-millisecond timing precision powered by the Web Audio API hardware audio clock.
+- Supports arbitrary floating-point BPM inputs (e.g., 96.05 BPM) for precise tempo adjustment and video/audio synchronization.
+- High-contrast visual optical screen flash synchronized precisely with audio cues and display refresh rates.
 - Online Demo: https://defei-wang.github.io/precision-metronome/
