@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Precision Metronome</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: #000000;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        transition: background-color 0.08s ease-out;
+      }
+      body.flash {
+        background-color: #ffffff !important;
+        transition: none;
+      }
+      body.flash-accent {
+        background-color: #00e676 !important;
+        transition: none;
+      }
+      .ui-layer {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        background: rgba(22, 22, 24, 0.9);
+        padding: 38px 24px 22px;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        width: 90%;
+        max-width: 320px;
+      }
+      .lang-btn {
+        position: absolute;
+        top: 10px;
+        right: 14px;
+        background: none;
+        border: 1px solid #444;
+        color: #888;
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .lang-btn:active {
+        background-color: #333;
+      }
+      .form-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+      label {
+        font-size: 14px;
+        color: #bbb;
+      }
+      input[type="number"],
+      select {
+        padding: 8px 10px;
+        font-size: 16px;
+        font-weight: bold;
+        text-align: center;
+        background-color: #2a2a2e;
+        border: 1px solid #444;
+        border-radius: 8px;
+        color: #00e676;
+        outline: none;
+      }
+      input[type="number"] {
+        width: 110px;
+      }
+      select {
+        width: 140px;
+      }
+      input[type="range"] {
+        width: 140px;
+        accent-color: #00e676;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+        margin-top: 6px;
+      }
+      button.action-btn {
+        flex: 1;
+        padding: 12px;
+        font-size: 16px;
+        font-weight: 700;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        background-color: #00e676;
+        color: #000;
+      }
+      button.action-btn.running {
+        background-color: #ff5252;
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ui-layer">
+      <button class="lang-btn" id="langToggle">中 / EN</button>
+
+      <div class="form-row">
+        <label id="lblBpm">Tempo (BPM)</label>
+        <input
+          type="number"
+          id="bpmInput"
+          value="96.05"
+          step="any"
+          min="10"
+          max="400"
+        />
+      </div>
+
+      <div class="form-row">
+        <label id="lblFlash">Screen Flash</label>
+        <input
+          type="checkbox"
+          id="flashToggle"
+          checked
+          style="width: 20px; height: 20px; accent-color: #00e676"
+        />
+      </div>
+
+      <div class="form-row">
+        <label id="lblAccent">First Beat Accent</label>
+        <input
+          type="checkbox"
+          id="accentToggle"
+          checked
+          style="width: 20px; height: 20px; accent-color: #00e676"
+        />
+      </div>
+
+      <div class="form-row">
+        <label id="lblBeats">Beats Per Bar</label>
+        <input
+          type="number"
+          id="beatsPerBar"
+          value="4"
+          min="1"
+          max="32"
+          step="1"
+        />
+      </div>
+
+      <div class="form-row">
+        <label id="lblSound">Sound</label>
+        <select id="soundType">
+          <option value="woodblock" selected id="optWoodblock">
+            Woodblock
+          </option>
+          <option value="bell" id="optBell">Bell</option>
+          <option value="click" id="optClick">Mechanical Click</option>
+          <option value="sine" id="optSine">Sine Wave</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label id="lblVolume">Volume</label>
+        <input
+          type="range"
+          id="volumeControl"
+          min="0"
+          max="2"
+          step="0.05"
+          value="1.5"
+        />
+      </div>
+
+      <div class="controls">
+        <button class="action-btn" id="toggleBtn">START</button>
+      </div>
+    </div>
+
+    <script>
+      let currentLang = "en";
+      const i18n = {
+        en: {
+          bpm: "Tempo (BPM)",
+          flash: "Screen Flash",
+          accent: "First Beat Accent",
+          beats: "Beats Per Bar",
+          sound: "Sound",
+          woodblock: "Woodblock",
+          bell: "Bell",
+          click: "Mechanical Click",
+          sine: "Sine Wave",
+          volume: "Volume",
+          start: "START",
+          stop: "STOP",
+        },
+        zh: {
+          bpm: "速度 (BPM)",
+          flash: "屏幕闪烁",
+          accent: "首拍重音",
+          beats: "每小节拍数",
+          sound: "音色",
+          woodblock: "实木打击",
+          bell: "金属铃音",
+          click: "机械咔哒",
+          sine: "标准正弦",
+          volume: "音量",
+          start: "启动",
+          stop: "停止",
+        },
+      };
+
+      const langToggle = document.getElementById("langToggle");
+      const lblBpm = document.getElementById("lblBpm");
+      const lblFlash = document.getElementById("lblFlash");
+      const lblAccent = document.getElementById("lblAccent");
+      const lblBeats = document.getElementById("lblBeats");
+      const lblSound = document.getElementById("lblSound");
+      const lblVolume = document.getElementById("lblVolume");
+      const optWoodblock = document.getElementById("optWoodblock");
+      const optBell = document.getElementById("optBell");
+      const optClick = document.getElementById("optClick");
+      const optSine = document.getElementById("optSine");
+      const toggleBtn = document.getElementById("toggleBtn");
+
+      function updateLanguage(lang) {
+        currentLang = lang;
+        const dict = i18n[lang];
+        lblBpm.textContent = dict.bpm;
+        lblFlash.textContent = dict.flash;
+        lblAccent.textContent = dict.accent;
+        lblBeats.textContent = dict.beats;
+        lblSound.textContent = dict.sound;
+        lblVolume.textContent = dict.volume;
+        optWoodblock.textContent = dict.woodblock;
+        optBell.textContent = dict.bell;
+        optClick.textContent = dict.click;
+        optSine.textContent = dict.sine;
+
+        if (isRunning) {
+          toggleBtn.textContent = dict.stop;
+        } else {
+          toggleBtn.textContent = dict.start;
+        }
+      }
+
+      langToggle.addEventListener("click", () => {
+        updateLanguage(currentLang === "en" ? "zh" : "en");
+      });
+
+      let audioCtx = null;
+      let isRunning = false;
+      let nextNoteTime = 0.0;
+      let currentBeat = 0;
+      let timerID = null;
+      const visualQueue = [];
+
+      const bpmInput = document.getElementById("bpmInput");
+      const flashToggle = document.getElementById("flashToggle");
+      const accentToggle = document.getElementById("accentToggle");
+      const beatsPerBarInput = document.getElementById("beatsPerBar");
+      const soundType = document.getElementById("soundType");
+      const volumeControl = document.getElementById("volumeControl");
+
+      function playSound(time, isAccent) {
+        const masterGain = audioCtx.createGain();
+        const gain = parseFloat(volumeControl.value) || 1.0;
+        masterGain.gain.setValueAtTime(gain, time);
+        masterGain.connect(audioCtx.destination);
+
+        const type = soundType.value;
+
+        if (type === "woodblock") {
+          const osc = audioCtx.createOscillator();
+          const noteGain = audioCtx.createGain();
+          const baseFreq = isAccent ? 1200 : 750;
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(baseFreq, time);
+          osc.frequency.exponentialRampToValueAtTime(100, time + 0.03);
+
+          noteGain.gain.setValueAtTime(1.5, time);
+          noteGain.gain.exponentialRampToValueAtTime(0.001, time + 0.035);
+
+          osc.connect(noteGain);
+          noteGain.connect(masterGain);
+          osc.start(time);
+          osc.stop(time + 0.04);
+        } else if (type === "bell") {
+          [isAccent ? 2200 : 1200, isAccent ? 3300 : 1800].forEach(
+            (freq, idx) => {
+              const osc = audioCtx.createOscillator();
+              const noteGain = audioCtx.createGain();
+              osc.type = "triangle";
+              osc.frequency.setValueAtTime(freq, time);
+
+              noteGain.gain.setValueAtTime(idx === 0 ? 1.0 : 0.4, time);
+              noteGain.gain.exponentialRampToValueAtTime(
+                0.001,
+                time + (isAccent ? 0.25 : 0.15)
+              );
+
+              osc.connect(noteGain);
+              noteGain.connect(masterGain);
+              osc.start(time);
+              osc.stop(time + 0.3);
+            }
+          );
+        } else if (type === "click") {
+          const osc = audioCtx.createOscillator();
+          const noteGain = audioCtx.createGain();
+          osc.type = "square";
+          osc.frequency.setValueAtTime(isAccent ? 2400 : 1600, time);
+
+          noteGain.gain.setValueAtTime(1.2, time);
+          noteGain.gain.exponentialRampToValueAtTime(0.001, time + 0.015);
+
+          osc.connect(noteGain);
+          noteGain.connect(masterGain);
+          osc.start(time);
+          osc.stop(time + 0.02);
+        } else {
+          const osc = audioCtx.createOscillator();
+          const noteGain = audioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(isAccent ? 1760 : 880, time);
+
+          noteGain.gain.setValueAtTime(1.0, time);
+          noteGain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+
+          osc.connect(noteGain);
+          noteGain.connect(masterGain);
+          osc.start(time);
+          osc.stop(time + 0.06);
+        }
+      }
+
+      function scheduler() {
+        const bpm = parseFloat(bpmInput.value) || 96.05;
+        const secondsPerBeat = 60.0 / bpm;
+        const beatsPerBar = parseInt(beatsPerBarInput.value, 10) || 1;
+
+        while (nextNoteTime < audioCtx.currentTime + 0.1) {
+          const isAccent =
+            accentToggle.checked &&
+            beatsPerBar > 1 &&
+            currentBeat % beatsPerBar === 0;
+
+          playSound(nextNoteTime, isAccent);
+          visualQueue.push({ time: nextNoteTime, isAccent: isAccent });
+
+          currentBeat++;
+          nextNoteTime += secondsPerBeat;
+        }
+        timerID = setTimeout(scheduler, 25);
+      }
+
+      function drawVisual() {
+        if (!isRunning) return;
+        const now = audioCtx.currentTime;
+
+        while (visualQueue.length > 0 && visualQueue[0].time <= now) {
+          const beatInfo = visualQueue.shift();
+          if (flashToggle.checked) {
+            triggerFlash(beatInfo.isAccent);
+          }
+        }
+        requestAnimationFrame(drawVisual);
+      }
+
+      function triggerFlash(isAccent) {
+        const flashClass = isAccent ? "flash-accent" : "flash";
+        document.body.classList.add(flashClass);
+        setTimeout(() => {
+          document.body.classList.remove("flash", "flash-accent");
+        }, 35);
+      }
+
+      toggleBtn.addEventListener("click", () => {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        const dict = i18n[currentLang];
+
+        if (isRunning) {
+          clearTimeout(timerID);
+          visualQueue.length = 0;
+          document.body.classList.remove("flash", "flash-accent");
+          toggleBtn.textContent = dict.start;
+          toggleBtn.classList.remove("running");
+          isRunning = false;
+        } else {
+          if (audioCtx.state === "suspended") {
+            audioCtx.resume();
+          }
+          currentBeat = 0;
+          visualQueue.length = 0;
+          nextNoteTime = audioCtx.currentTime + 0.05;
+          isRunning = true;
+          scheduler();
+          requestAnimationFrame(drawVisual);
+          toggleBtn.textContent = dict.stop;
+          toggleBtn.classList.add("running");
+        }
+      });
+    </script>
+  </body>
+</html>
